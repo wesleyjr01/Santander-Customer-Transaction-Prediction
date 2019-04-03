@@ -42,8 +42,11 @@ param = {
 
 result = np.zeros(test.shape[0])
 oof = np.zeros(len(train))
-for splits in [3,5,7]:
-    rskf = RepeatedStratifiedKFold(n_splits=splits, n_repeats=3, random_state=43)
+seed = 17
+list_of_splits = [2, 3]
+n_repeats = 1
+for splits in list_of_splits:
+    rskf = RepeatedStratifiedKFold(n_splits=splits, n_repeats=n_repeats, random_state=seed)
     for counter, (train_index, valid_index) in enumerate(rskf.split(train, train.target), 1):
         print (counter)
 
@@ -65,8 +68,10 @@ for splits in [3,5,7]:
         oof[valid_index] = model.predict(train.iloc[valid_index], num_iteration=model.best_iteration)
         result += model.predict(test)
 
+n_models = sum([i * n_repeats for i in list_of_splits])
+print(f'n_models:{n_models}')
 submission = pd.DataFrame({"ID_code": test_id})
-submission['target'] = result / counter
+submission['target'] = result / n_models
 filename = "LGB_submission" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ".csv"
 filename = filename.replace(':', '_')
 submission.to_csv(filename, index=False)

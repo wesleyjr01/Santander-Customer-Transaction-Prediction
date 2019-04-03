@@ -1,11 +1,12 @@
-import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import StratifiedKFold
+import numpy as np
+import random
+import warnings
+warnings.filterwarnings('ignore')
 from sklearn.model_selection import RepeatedStratifiedKFold
-from catboost import CatBoostClassifier
 import pickle
 import datetime
+from sklearn.ensemble import RandomForestClassifier
 
 train = pd.read_pickle("train.pkl").drop("ID_code", axis=1)
 test = pd.read_pickle("test.pkl")
@@ -15,8 +16,8 @@ test.drop(['ID_code'], axis=1, inplace=True)
 result = np.zeros(test.shape[0])  # Vector to be filled
 oof = np.zeros(len(train))  # Vector to be filled
 seed = 17
-list_of_splits = [2, 3]
-n_repeats = 1
+list_of_splits = [2, 3, 5]
+n_repeats = 3
 for splits in list_of_splits:
   rskf = RepeatedStratifiedKFold(n_splits=splits, n_repeats=n_repeats, random_state=seed)
   for counter, (train_index, valid_index) in enumerate(rskf.split(train, train.target), 1):
@@ -31,39 +32,25 @@ for splits in list_of_splits:
     y_valid = train.target.iloc[valid_index]
 
     # Training
-    model = CatBoostClassifier(iterations=100000,
-                               learning_rate=0.017,
-                               l2_leaf_reg=40,
-                               bootstrap_type='Bernoulli',
-                               depth=3,
-                               subsample=0.63,
-                               eval_metric='AUC',
-                               random_seed=seed,
-                               # bagging_temperature = 0.2,
-                               # od_type='Iter',
-                               # metric_period = 75
-                               )
-    model.fit(X_train, y_train,
-              eval_set=(X_valid, y_valid),
-              cat_features=None,
-              use_best_model=True,
-              verbose=True)
+    model = RandomForestClassifier(max_features='auto', oob_score=True, random_state=seed, n_jobs=-1,
+                                    n_estimators=1000, max_depth=8, verbose=1)
+    model.fit(X_train, y_train)
 
     # Output .pkl model
-    model_name = "CatBoost_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '.pkl'
+    model_name = "RF_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '.pkl'
     model_name = model_name.replace(':', '_')
     pickle.dump(model, open(model_name, 'wb'))
 
     # Feed OOF Vector with Val Prediction
-    oof[valid_index] = model.predict(X_valid)
+    # oof[valid_index] = model.predict(X_valid)
 
     # Feed Test Prediction Vector
-    result += model.predict(test)
+    result += model.predict_proba(test)[:, 1]
 
 n_models = sum([i * n_repeats for i in list_of_splits])
 print(f'n_models:{n_models}')
 submission = pd.DataFrame({"ID_code": test_id})
 submission['target'] = result / n_models
-filename = "CatBoost__submission" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ".csv"
+filename = "RF__submission" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ".csv"
 filename = filename.replace(':', '_')
 submission.to_csv(filename, index=False)

@@ -32,8 +32,11 @@ params = {'tree_method': TREE_METHOD, 'max_depth': MAX_TREE_DEPTH, 'alpha': REGU
 
 result = np.zeros(test.shape[0])  # Vector to be filled
 oof = np.zeros(len(train))  # Vector to be filled
-for splits in [2, 4, 6]:
-  rskf = RepeatedStratifiedKFold(n_splits=splits, n_repeats=3, random_state=17)
+seed = 17
+list_of_splits = [2, 3, 5]
+n_repeats = 3
+for splits in list_of_splits:
+  rskf = RepeatedStratifiedKFold(n_splits=splits, n_repeats=n_repeats, random_state=seed)
   for counter, (train_index, valid_index) in enumerate(rskf.split(train, train.target), 1):
       print(counter)
 
@@ -62,8 +65,10 @@ for splits in [2, 4, 6]:
       # Feed Test Prediction Vector
       result += model.predict(xgb.DMatrix(test.values))
 
+n_models = sum([i * n_repeats for i in list_of_splits])
+print(f'n_models:{n_models}')
 submission = pd.DataFrame({"ID_code": test_id})
-submission['target'] = result / counter
+submission['target'] = result / n_models
 filename = "XGB_submission" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ".csv"
 filename = filename.replace(':', '_')
 submission.to_csv(filename, index=False)
