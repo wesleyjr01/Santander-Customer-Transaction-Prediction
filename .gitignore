@@ -1,3 +1,4 @@
 *.csv
 train.pkl
 test.pkl
+*.zip
