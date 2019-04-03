@@ -37,7 +37,7 @@ for splits in list_of_splits:
     model.fit(X_train, y_train)
 
     # Output .pkl model
-    model_name = "RF_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '.pkl'
+    model_name = "RF_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '_MODEL.pkl'
     model_name = model_name.replace(':', '_')
     pickle.dump(model, open(model_name, 'wb'))
 

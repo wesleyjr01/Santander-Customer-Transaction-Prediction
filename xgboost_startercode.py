@@ -55,7 +55,7 @@ for splits in list_of_splits:
                         early_stopping_rounds=EARLY_STOP, verbose_eval=1)
 
       # Output .pkl model
-      model_name = "XGB_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '.pkl'
+      model_name = "XGB_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '_MODEL.pkl'
       model_name = model_name.replace(':', '_')
       pickle.dump(model, open(model_name, 'wb'))
 

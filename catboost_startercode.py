@@ -7,6 +7,18 @@ from catboost import CatBoostClassifier
 import pickle
 import datetime
 
+def augment(train, num_n=1, num_p=2):
+    newtrain = [train]
+
+    n = train[train.target == 0]
+    for i in range(num_n):
+        newtrain.append(n.apply(lambda x: x.values.take(np.random.permutation(len(n)))))
+
+    for i in range(num_p):
+        p = train[train.target > 0]
+        newtrain.append(p.apply(lambda x: x.values.take(np.random.permutation(len(p)))))
+    return pd.concat(newtrain)
+
 train = pd.read_pickle("train.pkl").drop("ID_code", axis=1)
 test = pd.read_pickle("test.pkl")
 test_id = test['ID_code'].values
@@ -15,42 +27,48 @@ test.drop(['ID_code'], axis=1, inplace=True)
 result = np.zeros(test.shape[0])  # Vector to be filled
 oof = np.zeros(len(train))  # Vector to be filled
 seed = 17
-list_of_splits = [2, 3]
-n_repeats = 1
+list_of_splits = [3, 5, 7]
+n_repeats = 3
 for splits in list_of_splits:
   rskf = RepeatedStratifiedKFold(n_splits=splits, n_repeats=n_repeats, random_state=seed)
   for counter, (train_index, valid_index) in enumerate(rskf.split(train, train.target), 1):
     print(counter)
 
     # Train data
-    X_train = train.drop(['target'], axis=1).iloc[train_index]
-    y_train = train.target.iloc[train_index]
+    X_train = train.iloc[train_index]
+    X_train = augment(X_train)
+    y_train = X_train.target
+    X_train = X_train.drop(['target'], axis=1)
+
 
     # Validation data
     X_valid = train.drop(['target'], axis=1).iloc[valid_index]
     y_valid = train.target.iloc[valid_index]
 
     # Training
-    model = CatBoostClassifier(iterations=100000,
-                               learning_rate=0.017,
-                               l2_leaf_reg=40,
+    model = CatBoostClassifier(iterations=20000,
+                               learning_rate=0.067,
+                               l2_leaf_reg=17,
                                bootstrap_type='Bernoulli',
-                               depth=3,
-                               subsample=0.63,
+                               depth=2,
+                               subsample=0.53,
                                eval_metric='AUC',
                                random_seed=seed,
                                # bagging_temperature = 0.2,
                                # od_type='Iter',
-                               # metric_period = 75
+                               # metric_period = 75,
+                               task_type = "GPU",
+                               early_stopping_rounds=1500,
                                )
     model.fit(X_train, y_train,
               eval_set=(X_valid, y_valid),
+
               cat_features=None,
               use_best_model=True,
               verbose=True)
 
     # Output .pkl model
-    model_name = "CatBoost_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '.pkl'
+    model_name = "CatBoost_" + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '_MODEL.pkl'
     model_name = model_name.replace(':', '_')
     pickle.dump(model, open(model_name, 'wb'))
 
