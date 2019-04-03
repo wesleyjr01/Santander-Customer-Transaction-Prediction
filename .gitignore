@@ -2,3 +2,4 @@
 train.pkl
 test.pkl
 *.zip
+*MODEL.pkl
