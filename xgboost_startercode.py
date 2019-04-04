@@ -27,22 +27,22 @@ test.drop(['ID_code'], axis=1, inplace=True)
 
 
 MAX_TREE_DEPTH = 2
-LEARNING_RATE = 0.039
+LEARNING_RATE = 0.019
 TREE_METHOD = 'auto'
 ITERATIONS = 100000
-SUBSAMPLE = 0.57
+SUBSAMPLE = 0.79
 REGULARIZATION = 0.23
 GAMMA = 0.3
 POS_WEIGHT = 1
 EARLY_STOP = 1000
-MIN_CHILD_WEIGHT = 85
+MIN_CHILD_WEIGHT = 39
 params = {'tree_method': TREE_METHOD, 'max_depth': MAX_TREE_DEPTH, 'alpha': REGULARIZATION,
           'gamma': GAMMA, 'subsample': SUBSAMPLE, 'scale_pos_weight': POS_WEIGHT, 'learning_rate': LEARNING_RATE,
           'silent': 1, 'objective': 'binary:logistic', 'eval_metric': 'auc', 'silent': True,
           'verbose_eval': False, 'min_child_weight' : MIN_CHILD_WEIGHT,
           'gpu_id' : 0, # FOR GPU
           'max_bin' : 16, # FOR GPU
-          'tree_method': 'gpu_hist' # FOR GPU}
+          'tree_method': 'gpu_hist'} # FOR GPU
 
 
 result = np.zeros(test.shape[0])  # Vector to be filled

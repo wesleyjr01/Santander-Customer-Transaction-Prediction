@@ -27,8 +27,8 @@ test.drop(['ID_code'], axis=1, inplace=True)
 result = np.zeros(test.shape[0])  # Vector to be filled
 oof = np.zeros(len(train))  # Vector to be filled
 seed = 17
-list_of_splits = [3, 5, 7]
-n_repeats = 3
+list_of_splits = [2]
+n_repeats = 1
 for splits in list_of_splits:
   rskf = RepeatedStratifiedKFold(n_splits=splits, n_repeats=n_repeats, random_state=seed)
   for counter, (train_index, valid_index) in enumerate(rskf.split(train, train.target), 1):
@@ -62,7 +62,6 @@ for splits in list_of_splits:
                                )
     model.fit(X_train, y_train,
               eval_set=(X_valid, y_valid),
-
               cat_features=None,
               use_best_model=True,
               verbose=True)
@@ -73,10 +72,10 @@ for splits in list_of_splits:
     pickle.dump(model, open(model_name, 'wb'))
 
     # Feed OOF Vector with Val Prediction
-    oof[valid_index] = model.predict(X_valid)
+    oof[valid_index] = model.predict_proba(X_valid)[:, 1]
 
     # Feed Test Prediction Vector
-    result += model.predict(test)
+    result += model.predict_proba(test)[:, 1]
 
 n_models = sum([i * n_repeats for i in list_of_splits])
 print(f'n_models:{n_models}')
