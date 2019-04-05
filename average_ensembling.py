@@ -14,23 +14,18 @@ def ensemble_models(df):
     """
 
     # os.chdir("/mydir")
-    y_pred = []
+    y_pred = np.zeros(test.shape[0])  # Vector to be filled
     for file in glob.glob("*MODEL.pkl"):
         print(file)
         model = pickle.load(open(file, 'rb'))
-        if len(y_pred) == 0:
-            if 'LGB' in file: # Load LGB Models
-                # y_pred = np.array(model.predict_proba(df)[:, 1])
-                y_pred = np.array(model.predict(df))
-            else: # Load XGBoost Models
-                y_pred = np.array(model.predict(xgb.DMatrix(df.values)))
-        else:
-            if 'LGB' in file: # Load LGB Models
-                # y_pred = y_pred + np.array(model.predict_proba(df)[:, 1])
-                y_pred = y_pred + np.array(model.predict(df))
-            else: # Load XGBoost Models
-                y_pred = y_pred + np.array(model.predict(xgb.DMatrix(df.values)))
-
+        if 'LGB' in file: # Load LGB Models
+            y_pred += np.array(model.predict(df))
+        elif 'XGB' in file: # Load XGBoost Models
+            y_pred += np.array(model.predict(xgb.DMatrix(df.values)))
+        elif 'CatBoost' in file:
+            y_pred += np.array(model.predict_proba(df)[:, 1])
+    lenn = len(glob.glob("*MODEL.pkl"))
+    print(f'len: {lenn}')
     y_pred /= len(glob.glob("*MODEL.pkl"))
     return y_pred
 
